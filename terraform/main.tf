@@ -36,17 +36,12 @@ module "firewall_rules" {
     direction               = "INGRESS"
     priority                = null
     source_ranges           = [format("%s/32", var.admin_ip)]
-    target_tags             = ["egress-inet"]
+    target_tags             = ["ingress-inet"]
     allow = [{
       protocol = "tcp"
       ports    = ["22"]
     }]
   }]
-}
-
-resource "google_service_account" "vm_sa" {
-  account_id   = "workloads-vm-sa"
-  display_name = "Workloads VM Service Account"
 }
 
 resource "google_compute_instance" "workloads_compute" {
@@ -67,19 +62,10 @@ resource "google_compute_instance" "workloads_compute" {
 
   network_interface {
     network = module.vpc.network_name
-    subnetwork = "workload-subnet"
+    subnetwork = module.vpc.subnets_names[0]
 
     access_config {
     }
-  }
-
-  service_account {
-    email  = google_service_account.vm_sa.email
-    scopes = ["cloud-platform"]
-  }
-
-  metadata = {
-    ssh-keys = "${var.ssh_user}:${file(var.ssh_public_key_path)}"
   }
 
   metadata_startup_script = <<-EOF
