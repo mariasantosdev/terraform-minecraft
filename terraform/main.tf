@@ -32,14 +32,11 @@ module "firewall_rules" {
 
   rules = [{
     name                    = "allow-ssh-ingress"
-    description             = "anne's house ip"
+    description             = "admin ssh access"
     direction               = "INGRESS"
     priority                = null
     source_ranges           = [format("%s/32", var.admin_ip)]
-    source_tags             = null
-    source_service_accounts = null
-    target_tags             = null
-    target_service_accounts = null
+    target_tags             = ["ingress-inet"]
     allow = [{
       protocol = "tcp"
       ports    = ["22"]
@@ -64,16 +61,15 @@ resource "google_compute_instance" "workloads_compute" {
   }
 
   network_interface {
-    network = "default"
+    network = module.vpc.network_name
+    subnetwork = module.vpc.subnets_names[0]
 
     access_config {
-      // Ephemeral public IP
     }
   }
 
-  metadata = {
-    foo = "bar"
-  }
-
-  metadata_startup_script = "echo hi > /test.txt"
+  metadata_startup_script = <<-EOF
+    #!/bin/bash
+    echo "VM pronta" > /test.txt
+  EOF
 }
